@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>My first three.js app</title>
+		<style>
+			body {
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../js/three.js"></script>
+		<script>
+			const scene = new THREE.Scene(); // create a new scene
+
+            // camera with FOV, aspect ratio, and near and far clipping plane
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
+
+            //renderer using webGL
+            const renderer = new THREE.WebGLRenderer();
+            // resolution for the rendering could be window.innerWidth/2, window.innerHeight/2 for half resolution
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // add the renderer to HTML document, it a <canvas> element    
+            document.body.appendChild(renderer.domElement);
+
+            // Now let's create a cube
+            const geometry = new THREE.BoxGeometry(1, 1, 1); // object containing all vertices and faces of cube
+            
+            const cubes = [
+                makeInstance(geometry, 0x44aa88, 0),
+                makeInstance(geometry, 0x8844aa, -2),
+                makeInstance(geometry, 0xaa8844, 2),
+            ]; 
+            
+
+            camera.position.z = 5; // since the camera is also at (0,0,0) we move the camera
+
+            //let's add light to the scene
+            {
+                const color = 0xffffff;
+                const intensity = 1;
+                const light = new THREE.DirectionalLight(color, intensity);
+                light.position.set(-1, 2, 4);
+                scene.add(light);
+            }
+
+
+            // now we need to render the scene in the main loop
+
+            const animate = function(){ // create a loop to renderer every frame
+                requestAnimationFrame(animate); // request refresh with callback (usually 60 fps)
+
+                //let's rotate all the cubes
+                cubes.forEach( element => {
+                    element.rotation.x += 0.01;
+                    element.rotation.y += 0.01;
+                });
+                
+                
+                renderer.render(scene, camera); // request render
+                
+            }
+            animate();
+
+            function makeInstance(geometry, color, x){
+                const material = new THREE.MeshPhongMaterial({color}); // create a new material
+                const cube = new THREE.Mesh(geometry, material); // create a mesh for the cube
+                scene.add(cube); // add the cube to the scene
+                cube.position.x = x; // modify the x position of the cube
+                
+                return cube;
+            }
+		</script>
+	</body>
+</html>

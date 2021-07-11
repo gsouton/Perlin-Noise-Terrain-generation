@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>My first three.js app</title>
+		<style>
+			body {
+				margin: 0;
+				height: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="module">
+			import * as THREE from "../../vendors/three.js-r130/build/three.module.js";
+
+			let camera, scene, renderer;
+			let geometry, material, meshes;
+
+			init();
+
+			function init() {
+				camera = new THREE.PerspectiveCamera(
+					70,
+					window.innerWidth / window.innerHeight,
+					0.1,
+					100
+				);
+				camera.position.z = 3;
+
+				scene = new THREE.Scene();
+
+				geometry = new THREE.BoxGeometry(1, 1, 1);
+				material = new THREE.MeshNormalMaterial();
+
+				meshes = [
+					makeInstance(geometry, -2),
+					makeInstance(geometry, 0),
+					makeInstance(geometry, 2),
+				];
+				//scene.add(mesh);
+
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio( window.devicePixelRatio );
+
+				renderer.setAnimationLoop(animation);
+				document.body.appendChild(renderer.domElement);
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function makeInstance(geometry, x) {
+				const mesh = new THREE.Mesh(geometry, material); // create a mesh for the cube
+				scene.add(mesh); // add the cube to the scene
+				mesh.position.x = x; // modify the x position of the cube
+
+				return mesh;
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			function animation(time) {
+				meshes.forEach((mesh) => {
+					mesh.rotation.x = time / 2000;
+					mesh.rotation.y = time / 1000;
+				});
+
+				renderer.render(scene, camera);
+			}
+		</script>
+	</body>
+</html>

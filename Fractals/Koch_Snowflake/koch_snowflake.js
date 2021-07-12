@@ -15,9 +15,14 @@ const near = -1;
 const far = 100;
 
 let grid;
+
 //Points and Line
-let points;
-let lineGeometry, lineMat, lineMesh;
+
+let line1Points, line2Points, line3Points;
+let line1Geometry, line2Geometry, line3Geometry;
+let line1Mesh,line2Mesh,line3Mesh;
+let line1Mat, line2Mat,line3Mat;
+
 
 let l = [];
 
@@ -43,11 +48,12 @@ function init() {
 		near,
 		far
 	);
-    camera.position.set(0, innerHeight/3, 0);
-	camera.zoom = 1;
+    //camera.position.set(0, innerHeight/3, 0);
+	camera.zoom = 100.0;
+	camera.updateProjectionMatrix();
 
     // --- add Controls -----
-    //controls = new OrbitControls(camera, renderer.domElement);
+    controls = new OrbitControls(camera, renderer.domElement);
     //controls.enableDamping = true;
 
     
@@ -58,45 +64,105 @@ function init() {
 
 	
 
-	//Construct a line
+	//Construct a lines
+	
+	//top
+	/*line1Points = [ new THREE.Vector2( 0, 0),new THREE.Vector2(-1 , 0)];
 
-	points = [];
-	points.push(new THREE.Vector2(-innerWidth/2 , 0));
-	points.push(new THREE.Vector2(innerWidth/2 , 0));
+	line1Geometry = new THREE.BufferGeometry().setFromPoints(line1Points
+	);
+	line1Mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+	line1Mesh = new THREE.Line(line1Geometry, line1Mat);
+	scene.add(line1Mesh);
 
-	lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-	lineMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
-	lineMesh = new THREE.Line(lineGeometry, lineMat);
+	//left
+	line2Points = [new THREE.Vector2(-1 , 0),new THREE.Vector2(-1+1/2 , Math.sqrt(3)/2), ];
 
-	const koch_array = compute_koch_snowflake(points, 10);
-	lineMesh.geometry.setFromPoints(koch_array);
-	scene.add(lineMesh);
+	line2Geometry = new THREE.BufferGeometry().setFromPoints(line2Points);
+	line2Mat = new THREE.LineBasicMaterial({ color: 0xffdd00 });
+	line2Mesh = new THREE.Line(line2Geometry, line2Mat);
+	scene.add(line2Mesh);
 
-    /*const p2 = [
-        new THREE.Vector2(-innerWidth/2 , innerHeight),
-        new THREE.Vector2(innerWidth/2 , innerHeight)];
-    const geo2 = new THREE.BufferGeometry().setFromPoints(p2);
-    const koch_array2 = compute_koch_snowflake(points, 10);
+	//right
+	line3Points = [ new THREE.Vector2(-1/2 , Math.sqrt(3)/2),new THREE.Vector2(0 , 0)];
 
-	const lineMat2 = new THREE.LineBasicMaterial({ color: 0x0000ff });
-	const lineMesh2 = new THREE.Line(geo2, lineMat2);
-    lineMesh2.geometry.setFromPoints(koch_array2);
-    scene.add(lineMesh2);
-    */
+	line3Geometry = new THREE.BufferGeometry().setFromPoints(line3Points);
+	line3Mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+	line3Mesh = new THREE.Line(line3Geometry, line3Mat);
+	scene.add(line3Mesh);
+
+	// Compute koch snowflake
+	const koch_array_top = compute_koch_snowflake(line1Points, 10);
+	line1Mesh.geometry.setFromPoints(koch_array_top);
+
+	const koch_array_left = compute_koch_snowflake(line2Points, 10);
+	line2Mesh.geometry.setFromPoints(koch_array_left);
+
+	const koch_array_right = compute_koch_snowflake(line3Points, 10);
+	line3Mesh.geometry.setFromPoints(koch_array_right, 4);
+		*/
+    
 
     window.addEventListener( 'resize', onWindowResize );
     //controls.addEventListener('change', render);
-
+	
 
 	// render
 	render();
 }
 
+
+function makeInstanceKochFlake(scaling_factor, koch_flakes_points){
+	const line1Points = [ new THREE.Vector2( 0, 0),new THREE.Vector2(-1 , 0)];
+
+	line1Geometry = new THREE.BufferGeometry().setFromPoints(line1Points
+	);
+	line1Mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+	line1Mesh = new THREE.Line(line1Geometry, line1Mat);
+	scene.add(line1Mesh);
+
+	//left
+	line2Points = [new THREE.Vector2(-1 , 0),new THREE.Vector2(-1+1/2 , Math.sqrt(3)/2), ];
+
+	line2Geometry = new THREE.BufferGeometry().setFromPoints(line2Points);
+	line2Mat = new THREE.LineBasicMaterial({ color: 0xffdd00 });
+	line2Mesh = new THREE.Line(line2Geometry, line2Mat);
+	scene.add(line2Mesh);
+
+	//right
+	line3Points = [ new THREE.Vector2(-1/2 , Math.sqrt(3)/2),new THREE.Vector2(0 , 0)];
+
+	line3Geometry = new THREE.BufferGeometry().setFromPoints(line3Points);
+	line3Mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+	line3Mesh = new THREE.Line(line3Geometry, line3Mat);
+	scene.add(line3Mesh);
+}
+
+function createKochFlake(iteration = 7){
+	//bottom side
+	const line1Points = [ new THREE.Vector2( 0, 0),new THREE.Vector2(-1 , 0)];
+	const koch_bottom = compute_koch_snowflake(line1Points, iteration);
+	
+	// left side
+	const line2Points = [new THREE.Vector2(-1 , 0),new THREE.Vector2(-1+1/2 , Math.sqrt(3)/2), ];
+	const koch_left = compute_koch_snowflake(line2Points, iteration);
+	
+	// right side
+	const line3Points = [ new THREE.Vector2(-1/2 , Math.sqrt(3)/2),new THREE.Vector2(0 , 0)];
+	const koch_right = compute_koch_snowflake(line3Points, iteration);
+
+	return [koch_bottom, koch_left, koch_right];
+
+
+}
+
+
+
 function render(time) {
 	renderer.render(scene, camera);
 }
 
-function compute_koch_snowflake(array_points, iteration = 3, initialSize = innerHeight, reduce_factor = 1 ) {
+function compute_koch_snowflake(array_points, iteration = 3, initialSize = 1, reduce_factor = 1 ) {
 	if (iteration === 0) return array_points;
 	let tmp = [array_points[0]];
 	for (let i = 0; i < array_points.length - 1; i++) {
@@ -104,7 +170,7 @@ function compute_koch_snowflake(array_points, iteration = 3, initialSize = inner
 		let middleOfDivision = divisions[0].clone().lerp(divisions[1], 1 / 2);
         let segment = new THREE.Vector2(divisions[1].x - middleOfDivision.x, divisions[1].y - middleOfDivision.y);
 		let normal = normalVector(segment);
-       
+		
 		normal.multiplyScalar(initialSize/Math.pow(3,reduce_factor));
 		middleOfDivision.add(normal);
 
@@ -134,7 +200,7 @@ function normalVector(vector) {
 function update(time) {
     time *= 0.001; 
 	render();
-    updateCameraOnRender(time);
+    //updateCameraOnRender(time);
 }
 
 function updateCameraOnRender(time){

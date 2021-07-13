@@ -83,12 +83,25 @@ function init() {
 
 	//---------- generate object for scene 1 ----------
 	const koch_points = generateKochFlakesPoints(8); // generate points for a triangle with 8 iterations for koch
+	//const p1 = generateKochFlakesPoints(1);
+	//const p2 = generateKochFlakesPoints(2);
+	const p3 = generateKochFlakesPoints(3);
+
 	object_scene_1.push(makeInstanceKochFlake(koch_points)); // push on stack a mesh made out with the points
-	
+	//object_scene_1.push(makeInstanceKochFlake(p1));
+	//object_scene_1.push(makeInstanceKochFlake(p2));
+	object_scene_1.push(makeInstanceKochFlake(p3));
+
+
 	// generate more snowflakes by scaling them 
 	for (let scale = 2; scale < 15; scale++) {
 		let color = Math.random() * 0xffffff; // assign a random color
 		object_scene_1.push(makeInstanceKochFlake(koch_points, scale, color)); // create instance
+		//object_scene_1.push(makeInstanceKochFlake(p1, scale, color));
+		//object_scene_1.push(makeInstanceKochFlake(p2, scale, color));
+		object_scene_1.push(makeInstanceKochFlake(p3, scale, color));
+
+
 	}
 
 	window.addEventListener("resize", onWindowResize); // on resize apdat camera and render
@@ -261,12 +274,8 @@ function buildGUI() {
 	controlsFolder.open();
 
 	const visualizationFolder = gui.addFolder("Koch flake Animation");
-	visualizationFolder.add(animationParamaters, "animation_speed", 1.0, 2.5, 0.1).onChange(function(){
-		console.log("speed changed to ", animationParamaters.animation_speed);
-	});
-	visualizationFolder.add(animationParamaters, "iteration", 1, 9, 1).onChange(function(){
-		console.log("iterations changed to ", animationParamaters.iteration);
-	});;
+	visualizationFolder.add(animationParamaters, "animation_speed", 1.0, 2.5, 0.1);
+	visualizationFolder.add(animationParamaters, "iteration", 1, 9, 1);
 	visualizationFolder.addColor(animationParamaters, "color").onChange(function(value){
 		animated_object.material.color.set(value);
 		render();
@@ -317,7 +326,6 @@ function stopAnimation(){
  * Function that animate the construction of the koch flake
  */
 function animationKochFlake(scale = 500) {
-	console.log(animated_object.material);
 	clearScene();
 	let points = LineGeometry.triangleVectors(scale);
 	const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);

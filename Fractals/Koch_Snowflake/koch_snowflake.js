@@ -1,9 +1,9 @@
 import * as THREE from "../../vendors/three.js-r130/build/three.module.js";
 import { GUI } from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import { OrbitControls } from "../../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
-import * as LineGeometry from "./lineGeometry.js" 
+import * as LineGeometry from "./lineGeometry.js";
 
-// GUI Attributes
+// ---------- GUI Attributes ----------
 const gui = new GUI();
 let controlsParameters = {
 	reset: function () {
@@ -11,46 +11,53 @@ let controlsParameters = {
 	},
 };
 let sceneParameters = {
+	color: randomColor,
 	reset: resetScene,
 };
 
 let animationParamaters = {
 	iteration: 5,
-	choice: ["flake", "line"],
-	flake: animationKochFlake,
+	animation_speed: 1.2,
+	color: 0x00ffdd,
+	animation: animationKochFlake,
 };
 
-//controls
+// ---------- Animation ID (requestFrame) ----------
+let animationLoopID;
+
+//---------- controls ---------- 
 let controls;
 
-// needed to render a scene
+// ---------- Objects needed to render a scene ----------
 let renderer, scene, camera;
 
-//Camera Settings
+//---------- Camera Settings ----------
 const near = -1;
 const far = 100;
-let camera_speed = 0.01;
 
-// Objects to render on screen
-const koch_flakes_objects = [];
-let koch_animation_objects = { flake: undefined, line: undefined };
+//---------- Objects to render on screen ----------
 
-let grid;
+const object_scene_1 = [];
+let animated_object = {
+	mesh: undefined,
+	material: new THREE.LineBasicMaterial({ color: animationParamaters.color }),
+};
+
 
 init();
 
 function init() {
-	// Initialize Renderer
+
+	// ---------- Initialize Renderer ----------
 	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	renderer.setPixelRatio(window.devicePixelRatio);
-	//renderer.setAnimationLoop(update);
 	document.body.append(renderer.domElement);
 
-	// Init Scene
+	// ----------Init Scene ----------
 	scene = new THREE.Scene();
-
-	// Init Orhtographic Camera for 2D
+	
+	// ---------- Init Orhtographic Camera for 2D ----------
 	camera = new THREE.OrthographicCamera(
 		-innerWidth / 2,
 		innerWidth / 2,
@@ -59,136 +66,97 @@ function init() {
 		near,
 		far
 	);
-	//camera.position.set(0, innerHeight/3, 0);
 	camera.zoom = 1;
 
-	// --- add Controls -----
+	// ---------- add Controls ----------
 	controls = new OrbitControls(camera, renderer.domElement);
-	controls.minZoom = 5.7e-15;
+	//controls.minZoom = 5.7e-15;
 	//controls.maxZoom = 50000;
 	//controls.enableDamping = true;
 
 	// --- Grid Helper -----
-	grid = new THREE.GridHelper(innerWidth, 30);
+	/*
+	const grid = new THREE.GridHelper(innerWidth, 30);
 	grid.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-	//scene.add(grid);
+	scene.add(grid);
+	*/
 
-	const koch_points = createKochFlake(8);
-	console.log(koch_points);
-	koch_flakes_objects.push(makeInstanceKochFlake(koch_points));
+	//---------- generate object for scene 1 ----------
+	const koch_points = generateKochFlakesPoints(8); // generate points for a triangle with 8 iterations for koch
+	object_scene_1.push(makeInstanceKochFlake(koch_points)); // push on stack a mesh made out with the points
+	
+	// generate more snowflakes by scaling them 
+	for (let scale = 2; scale < 15; scale++) {
+		let color = Math.random() * 0xffffff; // assign a random color
+		object_scene_1.push(makeInstanceKochFlake(koch_points, scale, color)); // create instance
+	}
 
-	/*for (
-		let i = 2, x_shift = 0.5, y_shift = -0.25;
-		i < 20;
-		i += 1, x_shift += 0.5, y_shift += -0.25
-	) {
-		koch_flakes_objects.push(
-			makeInstanceKochFlake(koch_points, i, i, x_shift, y_shift)
-		);
-	}*/
+	window.addEventListener("resize", onWindowResize); // on resize apdat camera and render
+	controls.addEventListener("change", render); // same for when controls are used
 
-	window.addEventListener("resize", onWindowResize);
-	controls.addEventListener("change", render);
+	buildGUI(); 
 
-	buildGUI();
-
-	// render
 	render();
 }
 
-function makeInstanceKochFlake(
-	koch_flakes_points,
-	x_scale = 1,
-	y_scale = 1,
-	x_shift = 0,
-	y_shift = 0,
-	color = 0xffdd00,
-	
-) {
-	if (x_scale > 1 && y_scale > 1) {
-		shiftAndScale(koch_flakes_points, x_scale, y_scale, x_shift, y_shift);
-	
+/**
+ * Assign a random color to all object in scene 1 and then render
+ */
+function randomColor(){
+	object_scene_1.forEach((object) =>{
+		object.material.color.set(Math.random()*0xffffff);
+	});
+	render();
+}
+
+/**
+ * generate the each point for a koch snowflake with 7 iteration by default
+ */
+function generateKochFlakesPoints(iteration = 7) {
+	let points = LineGeometry.triangleVectors();
+	return compute_koch_snowflake(points, iteration);
+}
+
+/**
+ * Create a Mesh with the given points,
+ * Add the mesh to scene
+ * @param {array of Vector3 THREE.js} koch_flakes_points that has been already computed 
+ * @param {Number} scale 
+ * @param {Number} color 
+ * @returns a Mesh (Line)
+ */
+function makeInstanceKochFlake(koch_flakes_points, scale = 1,color = 0xffdd00) {
+	if (scale > 1) {
+		koch_flakes_points.forEach(point =>{
+			point.multiplyScalar(scale);
+		})
 	}
-	
 	const lineMaterial = new THREE.LineBasicMaterial({ color: color });
-	const lineGeometry = new THREE.BufferGeometry().setFromPoints(koch_flakes_points);
+	const lineGeometry = new THREE.BufferGeometry().setFromPoints(
+		koch_flakes_points
+	);
 	const lineMesh = new THREE.Line(lineGeometry, lineMaterial);
 	scene.add(lineMesh);
 	return lineMesh;
-	
-	/*
-	//bottom
-	const line1Geometry = new THREE.BufferGeometry().setFromPoints(
-		koch_flakes_points[0]
-	);
-	const line1Mat = new THREE.LineBasicMaterial({ color: color_bottom });
-	const line1Mesh = new THREE.Line(line1Geometry, line1Mat);
-
-	scene.add(line1Mesh);
-
-	//left
-	const line2Geometry = new THREE.BufferGeometry().setFromPoints(
-		koch_flakes_points[1]
-	);
-	const line2Mat = new THREE.LineBasicMaterial({ color: color_left });
-	const line2Mesh = new THREE.Line(line2Geometry, line2Mat);
-	scene.add(line2Mesh);
-
-	//right
-	const line3Geometry = new THREE.BufferGeometry().setFromPoints(
-		koch_flakes_points[2]
-	);
-	const line3Mat = new THREE.LineBasicMaterial({ color: color_right });
-	const line3Mesh = new THREE.Line(line3Geometry, line3Mat);
-	scene.add(line3Mesh);
-
-	return [line1Mesh, line2Mesh, line3Mesh];
-	*/
 }
 
-function scaleVectors(points, factor){
-	points.forEach((point) =>{
-		point.multiplyScalar(factor);
-	});
-}
 
-function shiftAndScale(points, x_scale, y_scale, x_shift, y_shift) {
-	points.forEach((point) => {
-		point.x = point.x * x_scale + x_shift;
-		point.y = point.y * y_scale + y_shift;
-	});
-}
 
-function createKochFlake(iteration = 7) {
-	let points = LineGeometry.triangleVectors();
-	return compute_koch_snowflake(points, iteration);
-	/*
-	//bottom side
-	const line1Points = [new THREE.Vector2(0, 0), new THREE.Vector2(-1, 0)];
-	const koch_bottom = compute_koch_snowflake(line1Points, iteration);
-
-	// left side
-	const line2Points = [
-		new THREE.Vector2(-1, 0),
-		new THREE.Vector2(-1 + 1 / 2, Math.sqrt(3) / 2),
-	];
-	const koch_left = compute_koch_snowflake(line2Points, iteration);
-
-	// right side
-	const line3Points = [
-		new THREE.Vector2(-1 / 2, Math.sqrt(3) / 2),
-		new THREE.Vector2(0, 0),
-	];
-	const koch_right = compute_koch_snowflake(line3Points, iteration);
-
-	return [koch_bottom, koch_left, koch_right];
-	*/
-}
-
+/**
+ * Render the scene from the point of view of the camera
+ */
 function render(time) {
 	renderer.render(scene, camera);
 }
 
+/**
+ * Compute each position for an array given with the koch flake pattern
+ * @param {Array of Vector2 THREE JS} array_points 
+ * @param {Number} iteration Number of time to repeat the process
+ * @param {Number} initialSize Initial size for each spike
+ * @param {Number} reduce_factor Reduce each spike by a factor
+ * @returns Array of points computed
+ */
 function compute_koch_snowflake(
 	array_points,
 	iteration = 3,
@@ -225,6 +193,12 @@ function compute_koch_snowflake(
 	);
 }
 
+/**
+ * Divide a segment in three equally
+ * @param {Vector THREE JS} pointA 
+ * @param {Vector THREE JS} pointB 
+ * @returns the points corresponding to 1/3 and 2/3 in an Array
+ */
 function divideSegementInThree(pointA, pointB) {
 	return [
 		pointA.clone().lerp(pointB, 1 / 3),
@@ -232,26 +206,29 @@ function divideSegementInThree(pointA, pointB) {
 	];
 }
 
+/**
+ * 
+ * @param {Vector2 THREE JS} vector 
+ * @returns The normal of a vector
+ */
 function normalVector(vector) {
 	let normalized_vector = vector.clone().normalize();
 	return normalized_vector.set(-normalized_vector.y, normalized_vector.x);
 }
 
-/* Function called every frame*/
+/**
+ * Function designed to be use by renderer.setAnimationLoop
+ * @param {time stamp} time 
+ */
 function update(time) {
 	time *= 0.001;
 	render();
 	updateCameraOnRender(time);
 }
 
-function updateCameraOnRender(time) {
-	if (camera.zoom <= 0.1) {
-		camera.zoom = 230;
-	}
-	camera.zoom -= camera_speed * time;
-	camera.updateProjectionMatrix();
-}
-
+/**
+ * Adapt the camera on resize of the screen
+ */
 function updateCameraOnResize() {
 	camera.left = -innerWidth / 2;
 	camera.right = innerWidth / 2;
@@ -260,74 +237,134 @@ function updateCameraOnResize() {
 	camera.updateProjectionMatrix();
 }
 
+/**
+ * Function call whenever the window resizes
+ * dapt the camera and renderer size and rerender
+ */
 function onWindowResize() {
 	updateCameraOnResize();
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	render();
 }
 
+/**
+ * Function that add all the GUI on the window
+ */
 function buildGUI() {
 	const sceneFolder = gui.addFolder("Scene parameters");
+	sceneFolder.add(sceneParameters, "color").name("Change colors (Random)");
 	sceneFolder.add(sceneParameters, "reset").name("Reset Scene");
+	sceneFolder.open();
 
 	const controlsFolder = gui.addFolder("Controls");
 	controlsFolder.add(controlsParameters, "reset").name("Reset position");
 	controlsFolder.open();
 
-	const visualization = gui.addFolder("Koch flake Animation");
-	visualization.add(animationParamaters, "iteration", 1, 9, 1);
-	visualization
-		.add(animationParamaters, "choice", animationParamaters.choice)
-		.name("Type of animiation")
-		.onChange(function (value) {
-			animationConstructionKochFlake(
-				value,
-				animationParamaters.iteration
-			);
-		});
-	visualization.open();
+	const visualizationFolder = gui.addFolder("Koch flake Animation");
+	visualizationFolder.add(animationParamaters, "animation_speed", 1.0, 2.5, 0.1).onChange(function(){
+		console.log("speed changed to ", animationParamaters.animation_speed);
+	});
+	visualizationFolder.add(animationParamaters, "iteration", 1, 9, 1).onChange(function(){
+		console.log("iterations changed to ", animationParamaters.iteration);
+	});;
+	visualizationFolder.addColor(animationParamaters, "color").onChange(function(value){
+		animated_object.material.color.set(value);
+		render();
+	});
+	visualizationFolder.add(animationParamaters, "animation").name("See animation ");
+
+
+	visualizationFolder.open();
 }
 
+/**
+ * Reset the scene, stop all animation, clear the scene and render the initial scene
+ * @returns 
+ */
 function resetScene() {
-	deleteScene();
-	koch_flakes_objects.forEach((objects) => {
-		objects.forEach((mesh) => {
-			scene.add(mesh);
-		});
+	stopAnimation();
+	clearScene();
+	object_scene_1.forEach((object) => {
+		scene.add(object);
 	});
+	render();
+	return;
+}
+
+/**
+ * Stop all animation and clear the scene and render();
+ */
+function clearScene() {
+	stopAnimation();
+	scene.clear();
 	render();
 }
 
-function deleteScene() {
-	koch_flakes_objects.forEach((objects) => {
-		objects.forEach((mesh) => {
-			scene.remove(mesh);
-		});
-	});
-	Object.keys(koch_animation_objects).forEach((object) => {
-		scene.remove(object);
-	});
+
+/**
+ * Stop the current animation if exist
+ * @returns 
+ */
+function stopAnimation(){
+	if(animationLoopID !== undefined)
+		cancelAnimationFrame(animationLoopID);
+	animated_object.mesh = undefined;
+
+	return;
 }
 
-function animationConstructionKochFlake(choice) {
-	deleteScene();
-	if (choice === "flake") {
-		console.log("Start animating with a full koch flake");
-		animationKochFlake(animationParamaters.iteration);
+/**
+ * Function that animate the construction of the koch flake
+ */
+function animationKochFlake(scale = 500) {
+	console.log(animated_object.material);
+	clearScene();
+	let points = LineGeometry.triangleVectors(scale);
+	const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+	animated_object.mesh = new THREE.Line(lineGeometry, animated_object.material);
+	scene.add(animated_object.mesh);
+	render();
+
+	
+	let counter = 1;
+	let start = undefined;
+	console.log("start animation");
+	animationLoopID = requestAnimationFrame(function(time){
+		animation(time, start, points, scale, counter);
+	});		
+}
+
+/**
+ * Function use in rendering the animation of koch flake
+ * @param {time stamp} time 
+ * @param {undefined} startTime 
+ * @param {Array} points 
+ * @param {Numver} scale 
+ * @param {Number} counter 
+ */
+function animation(time, startTime = undefined, points, scale, counter){
+	time *= 0.001; // time in seconds
+	if(startTime === undefined){
+		startTime = time;
+	}
+	if(time - startTime >= animationParamaters.animation_speed && counter <= animationParamaters.iteration){
+		console.log(counter);
+		startTime = time;
+		points = compute_koch_snowflake(points, 1, scale, counter);
+		animated_object.mesh.geometry.setFromPoints(points);
+		render();
+		counter++;
+	}
+
+	animationLoopID = requestAnimationFrame(function(time){
+		animation(time, startTime, points, scale, counter);
+	});
+
+	if(counter > animationParamaters.iteration){
+		console.log("Request stop animation");
+		stopAnimation();
 	}
 }
 
-function animationKochFlake(iteration = 5, color = 0x00ffdd, scale = 50) {
-	
-	let points = LineGeometry.triangleVectors(scale);
-	const lineMaterial = new THREE.LineBasicMaterial({ color: color });
-	const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-	const lineMesh = new THREE.Line(lineGeometry, lineMaterial);
-	
-	scene.add(lineMesh);
-	points = compute_koch_snowflake(points, 7, scale);
-	lineGeometry.setFromPoints(points);
-	render();
 
-	
-}
+

@@ -1,6 +1,7 @@
 import * as THREE from "../../vendors/three.js-r130/build/three.module.js";
 import { GUI } from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import { OrbitControls } from "../../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
+import { BufferGeometryUtils } from "../../vendors/three.js-r130/examples/jsm/utils/BufferGeometryUtils.js"
 import * as LineGeometry from "./lineGeometry.js";
 
 // ---------- GUI Attributes ----------
@@ -11,8 +12,10 @@ let controlsParameters = {
 	},
 };
 let sceneParameters = {
+	scenes : [0, 1],
 	color: randomColor,
 	reset: resetScene,
+	scene : 0,
 };
 
 let animationParamaters = {
@@ -37,7 +40,7 @@ const far = 100;
 
 //---------- Objects to render on screen ----------
 
-const object_scene_1 = [];
+let objects = [];
 let animated_object = {
 	mesh: undefined,
 	material: new THREE.LineBasicMaterial({ color: animationParamaters.color }),
@@ -66,7 +69,8 @@ function init() {
 		near,
 		far
 	);
-	camera.zoom = 1;
+	camera.zoom = 0.75;
+	camera.updateProjectionMatrix();
 
 	// ---------- add Controls ----------
 	controls = new OrbitControls(camera, renderer.domElement);
@@ -82,33 +86,42 @@ function init() {
 	*/
 
 	//---------- generate object for scene 1 ----------
-	const koch_points = generateKochFlakesPoints(8); // generate points for a triangle with 8 iterations for koch
-	//const p1 = generateKochFlakesPoints(1);
-	//const p2 = generateKochFlakesPoints(2);
-	const p3 = generateKochFlakesPoints(3);
-
-	object_scene_1.push(makeInstanceKochFlake(koch_points)); // push on stack a mesh made out with the points
-	//object_scene_1.push(makeInstanceKochFlake(p1));
-	//object_scene_1.push(makeInstanceKochFlake(p2));
-	object_scene_1.push(makeInstanceKochFlake(p3));
-
-
-	// generate more snowflakes by scaling them 
-	for (let scale = 2; scale < 15; scale++) {
-		let color = Math.random() * 0xffffff; // assign a random color
-		object_scene_1.push(makeInstanceKochFlake(koch_points, scale, color)); // create instance
-		//object_scene_1.push(makeInstanceKochFlake(p1, scale, color));
-		//object_scene_1.push(makeInstanceKochFlake(p2, scale, color));
-		object_scene_1.push(makeInstanceKochFlake(p3, scale, color));
-
-
-	}
+	loadScene(0);
 
 	window.addEventListener("resize", onWindowResize); // on resize apdat camera and render
 	controls.addEventListener("change", render); // same for when controls are used
 
 	buildGUI(); 
 
+}
+
+function loadScene(number){
+	
+	if(Number(number) === 0){
+		console.log("In function loading scene", number);
+		//---------- generate object for scene 1 ----------
+		let koch_points = generateKochFlakesPoints(8); // generate points for a triangle with 8 iterations for koch
+		objects.push(makeInstanceKochFlake(koch_points)); // push on stack a mesh made out with the points
+		// generate more snowflakes by scaling them 
+		for (let scale = 2; scale < 22; scale++) {
+			let color = Math.random() * 0xffffff; // assign a random color
+			objects.push(makeInstanceKochFlake(koch_points, scale, color)); // create instance
+		}
+	}if (Number(number) === 1){
+		console.log("loading scene", number);
+
+		let points = [];
+		for(let i = 0; i < 8; i++){
+			points.push(generateKochFlakesPoints(i));
+			objects.push(makeInstanceKochFlake(points[i]));
+		}
+		for (let scale = 2; scale < 22; scale++) {
+			let color = Math.random() * 0xffffff; // assign a random color
+			points.forEach(point =>{
+				objects.push(makeInstanceKochFlake(point, scale, color));
+			});
+		}
+	}
 	render();
 }
 
@@ -116,7 +129,7 @@ function init() {
  * Assign a random color to all object in scene 1 and then render
  */
 function randomColor(){
-	object_scene_1.forEach((object) =>{
+	objects.forEach((object) =>{
 		object.material.color.set(Math.random()*0xffffff);
 	});
 	render();
@@ -152,6 +165,7 @@ function makeInstanceKochFlake(koch_flakes_points, scale = 1,color = 0xffdd00) {
 	scene.add(lineMesh);
 	return lineMesh;
 }
+
 
 
 
@@ -229,15 +243,7 @@ function normalVector(vector) {
 	return normalized_vector.set(-normalized_vector.y, normalized_vector.x);
 }
 
-/**
- * Function designed to be use by renderer.setAnimationLoop
- * @param {time stamp} time 
- */
-function update(time) {
-	time *= 0.001;
-	render();
-	updateCameraOnRender(time);
-}
+
 
 /**
  * Adapt the camera on resize of the screen
@@ -265,6 +271,13 @@ function onWindowResize() {
  */
 function buildGUI() {
 	const sceneFolder = gui.addFolder("Scene parameters");
+	const sceneChoice = sceneFolder.add(sceneParameters, "scenes", sceneParameters.scenes);
+	sceneChoice.name("Choose a scene")
+	.onChange(function(value){
+		console.log("reset scene", sceneParameters.scene);
+		sceneParameters.scene = value;
+		resetScene(value);
+	});
 	sceneFolder.add(sceneParameters, "color").name("Change colors (Random)");
 	sceneFolder.add(sceneParameters, "reset").name("Reset Scene");
 	sceneFolder.open();
@@ -277,6 +290,7 @@ function buildGUI() {
 	visualizationFolder.add(animationParamaters, "animation_speed", 1.0, 2.5, 0.1);
 	visualizationFolder.add(animationParamaters, "iteration", 1, 9, 1);
 	visualizationFolder.addColor(animationParamaters, "color").onChange(function(value){
+		
 		animated_object.material.color.set(value);
 		render();
 	});
@@ -290,22 +304,18 @@ function buildGUI() {
  * Reset the scene, stop all animation, clear the scene and render the initial scene
  * @returns 
  */
-function resetScene() {
-	stopAnimation();
+function resetScene(value = 0) {
 	clearScene();
-	object_scene_1.forEach((object) => {
-		scene.add(object);
-	});
-	render();
-	return;
+	loadScene(value);
 }
 
 /**
  * Stop all animation and clear the scene and render();
  */
 function clearScene() {
-	stopAnimation();
+	controls.reset();
 	scene.clear();
+	stopAnimation();
 	render();
 }
 
@@ -315,9 +325,10 @@ function clearScene() {
  * @returns 
  */
 function stopAnimation(){
-	if(animationLoopID !== undefined)
+	if(animationLoopID !== undefined){
 		cancelAnimationFrame(animationLoopID);
-	animated_object.mesh = undefined;
+		animated_object.mesh = undefined;
+	}
 
 	return;
 }

@@ -1,8 +1,14 @@
 import { GUI } from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer} from "../vendors/three.js-r130/build/three.module.js";
-import { generatePerlinTexture, generateRandomTexture} from "./NoiseGenerator/noise.js";
+import { generateImprovedPerlinTexture, generateOrignalPerlinTexture, generateRandomTexture} from "./NoiseGenerator/noise.js";
+import { OrbitControls } from "../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
+
+
 //create gui
 const gui = new GUI();
+
+//controls
+let controls;
 
 // Camera Settings
 let fov = 40;
@@ -27,8 +33,8 @@ let perlinProperties = {
 
 let noiseProperties = {
     currentType: "random",
-    resolution: 256,
-    types: ["random", "perlin"],
+    resolution: 4,
+    types: ["random", "classic perlin", "improved perlin"],
 }
 
 
@@ -40,10 +46,8 @@ function init() {
     
 	//------- Initialize renderer -------------------
 	renderer = new WebGLRenderer({ antialias: true });
-    console.log(renderer.getContext());
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	renderer.setPixelRatio(window.devicePixelRatio);
-	//renderer.setAnimationLoop(update);
 	document.body.appendChild(renderer.domElement);
 
     
@@ -57,6 +61,13 @@ function init() {
 	//------------ Manage the resize window ------------
 	window.addEventListener("resize", onWindowResize);
 
+    //----------- add control -------
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.maxDistance = 6;
+    controls.minDistance = 0.5;
+	controls.addEventListener("change", render); // same for when controls are used
+
+
     //------ make a plane ----
     createInstancePlane();
 
@@ -69,8 +80,8 @@ function init() {
 
 
 function createInstancePlane(){
-    const texture = generateRandomTexture(512, 512);
-    const planeGeo = new PlaneGeometry();
+    const texture = generateRandomTexture(noiseProperties.resolution, noiseProperties.resolution);
+    const planeGeo = new PlaneGeometry(3, 3);
     const planeMaterial = new MeshBasicMaterial({map: texture,color: 0xffffff});
     object = new Mesh(planeGeo, planeMaterial);
     scene.add(object);
@@ -96,10 +107,13 @@ function updateTexture(type){
         const texture = generateRandomTexture(noiseProperties.resolution, noiseProperties.resolution);
         object.material.map = texture;
     }
-    if(type === "perlin"){
-        const texture = generatePerlinTexture(noiseProperties.resolution, noiseProperties.resolution, perlinProperties.scale);
+    if(type === "classic perlin"){
+        const texture =  generateOrignalPerlinTexture(noiseProperties.resolution, noiseProperties.resolution, perlinProperties.scale);
         object.material.map = texture;
-
+    }
+    if(type === "improved perlin"){
+        const texture = generateImprovedPerlinTexture(noiseProperties.resolution, noiseProperties.resolution, perlinProperties.scale);
+        object.material.map = texture;
     }
     
 
@@ -113,16 +127,17 @@ function buildGUI() {
         object.scale.set(value, value, 0);
         render();
     });
+    planeFolder.hide();
 
     const noiseFolder = gui.addFolder("Noise properties");
    
 
     noiseFolder.open();
-    noiseFolder.add(noiseProperties, "resolution", 4, 512).onChange(function(value){
+    noiseFolder.add(noiseProperties, "resolution", 4, 2048, 1).onChange(function(value){
         updateTexture(noiseProperties.currentType);
     });
     noiseFolder.add(noiseProperties, "types", noiseProperties.types).setValue("random").onChange(function(value){
-        if(value === "perlin"){
+        if(value === "classic perlin" || value === "improved perlin"){
             perlinPropertiesFolder.show();
             perlinPropertiesFolder.open();
         }else{
@@ -133,7 +148,7 @@ function buildGUI() {
         
     });
     const perlinPropertiesFolder = noiseFolder.addFolder("Perlin Noise properties");
-    perlinPropertiesFolder.add(perlinProperties, "scale", 0.06, 0.9, 0.01).onChange(function(value){
+    perlinPropertiesFolder.add(perlinProperties, "scale", 0, 600, 0.01).onChange(function(value){
         perlinProperties.scale = value;
         updateTexture(noiseProperties.currentType);
     });

@@ -50,6 +50,7 @@ let animated_object = {
 init();
 
 function init() {
+	
 
 	// ---------- Initialize Renderer ----------
 	renderer = new THREE.WebGLRenderer({ antialias: true });

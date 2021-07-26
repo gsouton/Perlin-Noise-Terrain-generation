@@ -1,12 +1,11 @@
 import { GUI } from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {
-	AxesHelper,
-	BoxGeometry,
+	BufferAttribute,
+	BufferGeometry,
 	Color,
 	DataTexture,
 	DoubleSide,
 	LuminanceFormat,
-	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	PerspectiveCamera,
@@ -14,6 +13,7 @@ import {
 	RGBFormat,
 	Scene,
 	Vector2,
+	Vector3,
 	WebGLRenderer,
 } from "../vendors/three.js-r130/build/three.module.js";
 import {
@@ -23,6 +23,7 @@ import {
 } from "./NoiseGenerator/noise.js";
 import { OrbitControls } from "../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
 import { Region } from "./region.js";
+import { generateMeshData } from "./mesh.js";
 
 //create gui
 const gui = new GUI();
@@ -37,8 +38,7 @@ let near = 0.1;
 let far = 1000;
 
 let camera, scene, renderer;
-let object;
-
+let object, meshData;
 
 let perlinProperties = {
 	interpolationTypes: ["linear", "smoothstep", "smootherstep"],
@@ -66,6 +66,8 @@ let noiseProperties = {
 	texture: "noiseTexture",
 	types: ["random", "perlin2D", "improved perlin2D"],
 	Terrain3D: false,
+	heightMultiplier: 1,
+
 };
 
 let planeProperties = {
@@ -74,6 +76,15 @@ let planeProperties = {
 	widthSegment: noiseProperties.resolution,
 	heightSegment: noiseProperties.resolution,
 	wireframe: false,
+};
+
+let objectProperties = {
+	wireframe: false,
+}
+
+let controlPositions = {
+	_2D: new Vector3(0, 0, 6),
+	_3D: new Vector3(0, 50, -5),
 };
 
 let deepWater = new Region(0.2, new Color("RoyalBlue"));
@@ -107,67 +118,64 @@ function init() {
 
 	//----------- add control -------
 	controls = new OrbitControls(camera, renderer.domElement);
+
 	//controls.maxDistance = 6;
 	///controls.minDistance = 0.5;
 	controls.addEventListener("change", render); // same for when controls are used
+	controls.position0 = controlPositions._2D;
+
+	initMaps();
 
 	//------ make a plane ----
-	createInstancePlane(1.5, 1.5);
-	
-
-	const axesHelper = new AxesHelper(3);
-	scene.add( axesHelper );	
+	createInstancePlane();
 
 	render();
 
 	buildGUI();
 }
 
-function createInstancePlane() {
+function initMaps() {
 	const maps = generateRandomMaps(
 		noiseProperties.resolution,
 		noiseProperties.resolution,
 		regions
 	);
 	updateTextureAndHeightmap(maps);
+}
 
-	const planeGeo = new PlaneGeometry(
-		planeProperties.width,
-		planeProperties.height,
-		planeProperties.widthSegment,
-		planeProperties.heightSegment
+function createTerrain() {
+	meshData = generateMeshData(heightmap);
+	const bufferGeometry = new BufferGeometry();
+	bufferGeometry.setAttribute(
+		"position",
+		new BufferAttribute(meshData.vertices, 3)
 	);
+	bufferGeometry.setAttribute("uv", new BufferAttribute(meshData.uvs, 2));
+	bufferGeometry.setIndex(new BufferAttribute(meshData.triangles, 1));
 
-	const planeMaterial = new MeshBasicMaterial({
-		map: textures.noiseTexture,
-		color: 0xffffff,
-		side: DoubleSide,
-	});
-	object = new Mesh(planeGeo, planeMaterial);
+	const Mat = new MeshBasicMaterial({ side: DoubleSide, wireframe: objectProperties.wireframe, map: textures[noiseProperties.texture] });
+	object = new Mesh(bufferGeometry, Mat);
+	object.name = "Terrain";
 	scene.add(object);
 }
 
-function updatePlane() {
-	scene.remove(object);
+function createInstancePlane() {
 	const planeGeo = new PlaneGeometry(
 		planeProperties.width,
 		planeProperties.height,
 		planeProperties.widthSegment,
 		planeProperties.heightSegment
 	);
+
 	const planeMaterial = new MeshBasicMaterial({
 		map: textures[noiseProperties.texture],
 		color: 0xffffff,
 		side: DoubleSide,
-		wireframe: planeProperties.wireframe,
+		wireframe: objectProperties.wireframe,
 	});
 	object = new Mesh(planeGeo, planeMaterial);
+	object.name = "Plane";
 	scene.add(object);
-
-
-
-
-	render();
 }
 
 function render() {
@@ -210,8 +218,7 @@ function updateTexture(type) {
 		updateTextureAndHeightmap(maps);
 
 		object.material.map = textures[noiseProperties.texture];
-	}
-	else if (type === "perlin2D") {
+	} else if (type === "perlin2D") {
 		perlinProperties.scaleMax = 1;
 		const maps = generatePerlinMaps(
 			noiseProperties.resolution,
@@ -224,9 +231,8 @@ function updateTexture(type) {
 		);
 		updateTextureAndHeightmap(maps);
 		object.material.map = textures[noiseProperties.texture];
-	}else if (type === "improved perlin2D") {
+	} else if (type === "improved perlin2D") {
 		perlinProperties.scaleMax = 200;
-
 		const maps = generateImprovedPerlinMaps(
 			noiseProperties.resolution,
 			noiseProperties.resolution,
@@ -247,29 +253,51 @@ function updateTexture(type) {
 	render();
 }
 
-function buildGUI() {
-	const planeFolder = gui.addFolder("Plane Properties");
-	planeFolder.add(planeProperties, "wireframe").onChange(function(value){
-		planeProperties.wireframe = value;
-		object.material.wireframe = value;
+function updateControls() {
+	if (noiseProperties.Terrain3D) {
+		controls.position0 = controlPositions._3D;
+		controls.reset();
+		return;
+	} else {
+		controls.position0 = controlPositions._2D;
+		controls.reset();
+		return;
+	}
+}
+
+function updateObject(){
+	scene.remove(object);
+	if(noiseProperties.Terrain3D){
+		createTerrain();
 		render();
-	});
-	planeFolder.add(planeProperties, "widthSegment", 1, 512, 1).onChange(function(value){
-		planeProperties.widthSegment = value;
-		updatePlane();
-	});
-	planeFolder.add(planeProperties, "heightSegment", 1, 512, 1).onChange(function(value){
-		planeProperties.heightSegment = value;
-		updatePlane();
-	});
+		return;
+	}
+	createInstancePlane();
+	render();
+}
+
+
+function buildGUI() {
+	gui.add(controls, "reset").name("Reset position");
+
+	const meshFolder = gui.addFolder("Mesh properties");
+	meshFolder.add(objectProperties, "wireframe").onChange(function(){
+		object.material.wireframe = objectProperties.wireframe;
+		render();
+	})
 
 	const noiseFolder = gui.addFolder("Noise properties");
 
 	noiseFolder.open();
 	noiseFolder
-		.add(noiseProperties, "resolution", 4, 256, 1)
+		.add(noiseProperties, "resolution", 2, 256, 1)
 		.onChange(function () {
 			updateTexture(noiseProperties.currentType);
+			if (noiseProperties.Terrain3D) {
+				scene.remove(object);
+				createTerrain();
+				render();
+			}
 		});
 
 	noiseFolder
@@ -292,6 +320,8 @@ function buildGUI() {
 			}
 			noiseProperties.currentType = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
+
 		});
 
 	noiseFolder
@@ -303,10 +333,31 @@ function buildGUI() {
 			render();
 		});
 
-	noiseFolder.add(noiseProperties, "Terrain3D").onChange(function(value){
+	noiseFolder.add(noiseProperties, "Terrain3D").name("Generate_3D_Mesh").onChange(function (value) {
 		noiseProperties.Terrain3D = value;
-		updatePlane();
+		if (value && object.name === "Plane") {
+			scene.remove(object);
+			createTerrain();
+			camera.position.set(1.5* noiseProperties.resolution, 1.5*noiseProperties.resolution, -1.5*noiseProperties.resolution);
+			camera.rotation.y += 10 * noiseProperties.resolution;
+			camera.rotation.x += 10 * noiseProperties.resolution;
+			camera.updateProjectionMatrix();
+			controls.update();
+			render();
+		} else if (!value && object.name === "Terrain") {
+			scene.remove(object);
+			meshData = undefined;
+			createInstancePlane();
+			updateControls();
+			render();
+		}
 	});
+
+	noiseFolder.add(noiseProperties, "heightMultiplier", 1, 10).onChange(function(){
+		
+	})
+	
+	
 
 	const perlinPropertiesFolder = noiseFolder.addFolder(
 		"Perlin Noise properties"
@@ -316,6 +367,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			perlinProperties.scale = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 	perlinPropertiesFolder
 		.add(perlinProperties, "octaves", 0, 10, 1)
@@ -350,12 +402,14 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.scale = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 	improvedPerlinPropFolder
 		.add(improvedPerlinProp, "octaves", 0, 10, 1)
 		.onChange(function (value) {
 			improvedPerlinProp.octaves = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	improvedPerlinPropFolder
@@ -363,6 +417,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.persistance = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	improvedPerlinPropFolder
@@ -370,6 +425,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.lacunarity = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	improvedPerlinPropFolder
@@ -377,6 +433,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.seed = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	improvedPerlinPropFolder
@@ -385,6 +442,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.offset.x = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	improvedPerlinPropFolder
@@ -393,6 +451,7 @@ function buildGUI() {
 		.onChange(function (value) {
 			improvedPerlinProp.offset.y = value;
 			updateTexture(noiseProperties.currentType);
+			updateObject();
 		});
 
 	perlinPropertiesFolder.hide();

@@ -1,16 +1,11 @@
 import {
-    Color,
 	DataTexture,
 	LuminanceFormat,
     MathUtils,
-    RGBFormat,
     Vector2,
 } from "../../vendors/three.js-r130/build/three.module.js";
-import {color} from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {perlin, improvedPerlin } from "./perlin.js";
 
-const land = new Color("green");
-const water = new Color("skyblue");
 
 function generateNoise(width, height) {
 	let noiseMap = new Uint8Array(width * height);
@@ -27,13 +22,11 @@ function generatePerlinNoise(width, height, scale, interpolationType, octaves, p
         scale = 0.0001;
     
     let noiseMap = new Uint8Array(width*height);
-    let colorMap = new Uint8Array(width*height*3);
     
     for(let y = 0; y < height; y++){
         for(let x = 0; x < width; x++){
             let sampleX = (x /width) /scale;
             let sampleY = (y /width) /scale;
-            //let perlinValue = perlin(sampleX, sampleY, interpolationType);
             let perlinValue = octavePerlin(sampleX, sampleY, interpolationType, octaves, persitance);
             perlinValue += 1.0;
             perlinValue /= 2.0;

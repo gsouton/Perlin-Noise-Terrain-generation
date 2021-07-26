@@ -59,7 +59,7 @@ function interpolate(x, y, t, type="linear"){
 	else if(type === "smootherstep")
 		return (y - x) * ((t *(t*6.0 -15.0)+ 10.0) * t * t * t) +x;
 	else
-		return MathUtils.lerp(x, y, t);
+		return x + t * (y - x);
 
 }
 
@@ -102,7 +102,7 @@ export function improvedPerlin(x, y){
 	}
 	let X = Math.floor(x) & 255;
 	let Y = Math.floor(y) & 255;
-
+	
 	x = x - Math.floor(x);
 	y = y - Math.floor(y);
 

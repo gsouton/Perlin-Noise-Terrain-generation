@@ -81,6 +81,11 @@ a:hover{
 
 }
 
+img{
+    width: 100%;
+    height: auto;
+}
+
 #meshGUI,
 #noiseGUI,
 #perlinGUI,

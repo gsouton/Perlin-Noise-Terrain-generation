@@ -220,7 +220,11 @@ function render() {
 }
 
 function onWindowResize() {
-	
+	if(width < 600){
+		gui.close();
+	}else if(width > 600){
+		gui.open();
+	}
 	renderer.setSize(width, height);
 	render();
 }

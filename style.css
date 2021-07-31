@@ -89,17 +89,16 @@ img{
 #meshGUI,
 #noiseGUI,
 #perlinGUI,
-#improvedPerlinGUI
+#improvedPerlinGUI,
+#projectGUI
 {
+    width: 100%;
+    height: auto;
     position: absolute;
     float: right; 
 }
 
-#projectGUI{
-    position: absolute;
-    float: right;
-    
-}
+
 
 
 

@@ -18,9 +18,8 @@ import { DragControls } from "./vendors/three.js-r130/examples/jsm/controls/Drag
 
 //create gui
 const gui = new GUI({ autoPlace: false, width: 200 });
-const customGUIEl = document.getElementById("perlinFigure");
+const customGUIEl = document.getElementById("perlinGUI");
 customGUIEl.appendChild(gui.domElement);
-gui.domElement.setAttribute("id", "perlinGUI");
 
 //Renderer settings
 const canvas = document.getElementById("perlin");
@@ -126,7 +125,11 @@ function render() {
 
 function onWindowResize() {
 	
-	
+	if(width < 600){
+		gui.close();
+	}else if(width > 600){
+		gui.open();
+	}
 	renderer.setSize(width, height);
 	render();
 }

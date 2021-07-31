@@ -19,9 +19,9 @@ import { Region } from "./HeightMap/region.js";
 
 //create gui
 const gui = new GUI({ autoPlace: false, width: 200 });
-const customGUIEl = document.getElementById("improvedPerlinFigure");
+const customGUIEl = document.getElementById("improvedPerlinGUI");
 customGUIEl.appendChild(gui.domElement);
-gui.domElement.setAttribute("id", "improvedPerlinGUI");
+
 
 const canvas = document.getElementById("improvedPerlin");
 
@@ -124,6 +124,11 @@ function render() {
 }
 
 function onWindowResize() {
+	if(width < 600){
+		gui.close();
+	}else if(width > 600){
+		gui.open();
+	}
 	
 	renderer.setSize(width, height);
 	render();

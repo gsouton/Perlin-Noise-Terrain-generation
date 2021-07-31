@@ -17,10 +17,10 @@ import { Region } from "./HeightMap/region.js";
 import { DragControls } from "./vendors/three.js-r130/examples/jsm/controls/DragControls.js";
 
 //create gui
-const gui = new GUI({ autoPlace: false, width: 200, height:height});
-const customGUIEl = document.getElementById("noiseFigure");
+const gui = new GUI({ autoPlace: false, width: 200});
+const customGUIEl = document.getElementById("noiseGUI");
 customGUIEl.appendChild(gui.domElement);
-gui.domElement.setAttribute("id", "noiseGUI");
+
 
 //Renderer settings
 const canvas = document.getElementById("noise");
@@ -108,6 +108,11 @@ function render() {
 }
 
 function onWindowResize() {
+	if(width < 600){
+		gui.close();
+	}else if(width > 600){
+		gui.open();
+	}
 	
 	renderer.setSize(width, height);
 	render();

@@ -22,11 +22,13 @@ function generatePerlinNoise(width, height, scale, interpolationType, octaves, p
         scale = 0.0001;
     
     let noiseMap = new Uint8Array(width*height);
+    let halfWidth = width/2;
+    let halfHeight = height/2;
     
     for(let y = 0; y < height; y++){
         for(let x = 0; x < width; x++){
-            let sampleX = (x /width) /scale;
-            let sampleY = (y /width) /scale;
+            let sampleX = (x - halfWidth)  /width /scale;
+            let sampleY = (y - halfHeight) /width /scale;
             let perlinValue = octavePerlin(sampleX, sampleY, interpolationType, octaves, persitance);
             perlinValue += 1.0;
             perlinValue /= 2.0;

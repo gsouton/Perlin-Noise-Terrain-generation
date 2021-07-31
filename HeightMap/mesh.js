@@ -1,4 +1,4 @@
-export function generateMeshData(heightmap) {
+export function generateMeshData(heightmap, heightMultiplier) {
 	let width = heightmap.width;
 	let height = heightmap.height;
 	let topLeft = (width - 1) / -2; // to center the mesh
@@ -25,7 +25,7 @@ export function generateMeshData(heightmap) {
 			let uvStride = vertexIndex * 2;
 			meshData.vertices[verticeStride] = topLeft + x;
 			meshData.vertices[verticeStride + 1] = evaluateHeight(
-				heightmap.map[vertexIndex] / 255
+				heightmap.map[vertexIndex] / 255, heightMultiplier
 			);
 			meshData.vertices[verticeStride + 2] = topRight - y;
 
@@ -51,9 +51,9 @@ export function generateMeshData(heightmap) {
 	return meshData;
 }
 
-function evaluateHeight(heightValue) {
+function evaluateHeight(heightValue, heightMultiplier) {
 	if(heightValue <= 0.4){
-        return heightValue* 0.4*10;
+        return heightValue* 0.4*10 ;
     }
-    return heightValue * heightValue*10;
+    return heightValue * heightValue*10 * heightMultiplier;
 }

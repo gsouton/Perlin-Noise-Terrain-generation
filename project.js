@@ -1,4 +1,4 @@
-import { GUI } from "../../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
+import { GUI } from "./vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {
 	BufferAttribute,
 	BufferGeometry,
@@ -14,58 +14,63 @@ import {
 	Scene,
 	Vector2,
 	WebGLRenderer,
-} from "../vendors/three.js-r130/build/three.module.js";
+} from "./vendors/three.js-r130/build/three.module.js";
 import {
 	generateImprovedPerlinMaps,
 	generatePerlinMaps,
 	generateRandomMaps,
-} from "./NoiseGenerator/noise.js";
-import { OrbitControls } from "../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
-import { Region } from "./region.js";
-import { generateMeshData } from "./mesh.js";
+} from "./HeightMap/NoiseGenerator/noise.js";
+import { OrbitControls } from "./vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
+import { Region } from "./HeightMap/region.js";
+import { generateMeshData } from "./HeightMap/mesh.js";
 
 //create gui
-const gui = new GUI();
+const gui = new GUI({ autoPlace: false, width:200});
+const customGUIEl = document.getElementById("projectGUI");
+customGUIEl.appendChild(gui.domElement);
+gui.domElement.setAttribute("id", "pGUI");
 
 //controls
 let controls;
 
 // Camera Settings
 let fov = 40;
-let aspect = window.innerWidth / window.innerHeight;
+let aspect = width/height;
 let near = 0.1;
 let far = 1000;
 
 let camera, scene, renderer;
 let object, meshData;
 
+
+let noiseProperties = {
+	currentType: "improved perlin",
+	resolution: 128,
+	textures: ["noiseTexture", "colorTexture"],
+	texture: "colorTexture",
+	types: ["random", "perlin", "improved perlin"],
+	Terrain3D: true,
+	heightMultiplier: 1.5,
+};
+
+
 let perlinProperties = {
 	interpolationTypes: ["linear", "smoothstep", "smootherstep"],
 	interpolation: "linear",
-	scale: 0.3,
+	scale: .3,
 	scaleMax: 1,
 	octaves: 1,
 	persistance: 0.5,
 };
 
 let improvedPerlinProp = {
-	scale: 0.3,
+	scale: 20,
 	scaleMax: 50,
 	octaves: 4,
 	persistance: 0.5,
 	lacunarity: 2,
 	seed: 1,
 	offset: new Vector2(0, 0),
-};
-
-let noiseProperties = {
-	currentType: "random",
-	resolution: 16,
-	textures: ["noiseTexture", "colorTexture"],
-	texture: "noiseTexture",
-	types: ["random", "perlin2D", "improved perlin2D"],
-	Terrain3D: false,
-	heightMultiplier: 1,
 };
 
 let planeProperties = {
@@ -77,7 +82,7 @@ let planeProperties = {
 };
 
 let objectProperties = {
-	wireframe: false,
+	wireframe: true,
 };
 
 
@@ -93,18 +98,19 @@ let regions = [deepWater, water, sand, grass, mountain, snowy];
 let heightmap = { map: [], width: 0, height: 0 };
 let textures = { noiseTexture: undefined, colorTexture: undefined };
 
+const canvas = document.getElementById("project");
+
 init();
 
 function init() {
 	//------- Initialize renderer -------------------
-	renderer = new WebGLRenderer({ antialias: true });
-	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
+	renderer.setSize(width, height);
 	renderer.setPixelRatio(window.devicePixelRatio);
-	document.body.appendChild(renderer.domElement);
 
 	//------- create a camera ---------
 	camera = new PerspectiveCamera(fov, aspect, near, far);
-	camera.position.z = 6;
+	//camera.position.z = 6;
 
 	// ------ create a scene ----------
 	scene = new Scene();
@@ -114,28 +120,59 @@ function init() {
 	//----------- add control -------
 	controls = new OrbitControls(camera, renderer.domElement);
 
-	//controls.maxDistance = 6;
-	///controls.minDistance = 0.5;
+	
 	controls.addEventListener("change", render); // same for when controls are used
 
 	// Initialize maps and heighmap
-	initMaps();
+	initMaps(noiseProperties.currentType);
 
 	//------ make a plane ----
-	createInstancePlane();
+	createTerrain();
+	updateControls();
 
 	render();
 
 	buildGUI();
 }
 
-function initMaps() {
-	const maps = generateRandomMaps(
-		noiseProperties.resolution,
-		noiseProperties.resolution,
-		regions
-	);
-	updateTextureAndHeightmap(maps);
+function initMaps(type) {
+	if (type === "random") {
+		const maps = generateRandomMaps(
+			noiseProperties.resolution,
+			noiseProperties.resolution,
+			regions
+		);
+		updateTextureAndHeightmap(maps);
+
+		object.material.map = textures[noiseProperties.texture];
+	} else if (type === "perlin") {
+		perlinProperties.scaleMax = 1;
+		const maps = generatePerlinMaps(
+			noiseProperties.resolution,
+			noiseProperties.resolution,
+			perlinProperties.scale,
+			perlinProperties.interpolation,
+			perlinProperties.octaves,
+			perlinProperties.persistance,
+			regions
+		);
+		updateTextureAndHeightmap(maps);
+	} else if (type === "improved perlin") {
+		perlinProperties.scaleMax = 200;
+		const maps = generateImprovedPerlinMaps(
+			noiseProperties.resolution,
+			noiseProperties.resolution,
+			improvedPerlinProp.scale,
+			improvedPerlinProp.octaves,
+			improvedPerlinProp.persistance,
+			improvedPerlinProp.lacunarity,
+			improvedPerlinProp.seed,
+			improvedPerlinProp.offset,
+			regions
+		);
+
+		updateTextureAndHeightmap(maps);
+	}
 }
 
 function createTerrain() {
@@ -155,6 +192,7 @@ function createTerrain() {
 	});
 	object = new Mesh(bufferGeometry, Mat);
 	object.name = "Terrain";
+	object.position.x += 23*noiseProperties.resolution/100;
 	scene.add(object);
 }
 
@@ -162,8 +200,6 @@ function createInstancePlane() {
 	const planeGeo = new PlaneGeometry(
 		planeProperties.width,
 		planeProperties.height,
-		planeProperties.widthSegment,
-		planeProperties.heightSegment
 	);
 
 	const planeMaterial = new MeshBasicMaterial({
@@ -173,7 +209,9 @@ function createInstancePlane() {
 		wireframe: objectProperties.wireframe,
 	});
 	object = new Mesh(planeGeo, planeMaterial);
+	object.position.x += planeProperties.width/2;
 	object.name = "Plane";
+	
 	scene.add(object);
 }
 
@@ -182,9 +220,8 @@ function render() {
 }
 
 function onWindowResize() {
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-	renderer.setSize(window.innerWidth, window.innerHeight);
+	
+	renderer.setSize(width, height);
 	render();
 }
 
@@ -217,7 +254,7 @@ function updateTexture(type) {
 		updateTextureAndHeightmap(maps);
 
 		object.material.map = textures[noiseProperties.texture];
-	} else if (type === "perlin2D") {
+	} else if (type === "perlin") {
 		perlinProperties.scaleMax = 1;
 		const maps = generatePerlinMaps(
 			noiseProperties.resolution,
@@ -230,7 +267,7 @@ function updateTexture(type) {
 		);
 		updateTextureAndHeightmap(maps);
 		object.material.map = textures[noiseProperties.texture];
-	} else if (type === "improved perlin2D") {
+	} else if (type === "improved perlin") {
 		perlinProperties.scaleMax = 200;
 		const maps = generateImprovedPerlinMaps(
 			noiseProperties.resolution,
@@ -254,13 +291,10 @@ function updateTexture(type) {
 
 function updateControls() {
 	if (noiseProperties.Terrain3D) {
-		camera.position.set(
-			1.5 * noiseProperties.resolution,
-			1.5 * noiseProperties.resolution,
-			-1.5 * noiseProperties.resolution
-		);
-		camera.rotation.y += 10 * noiseProperties.resolution;
-		camera.rotation.x += 10 * noiseProperties.resolution;
+		camera.position.y = 1.1*noiseProperties.resolution;
+		camera.position.z = 1.5*noiseProperties.resolution;
+		
+		
 		camera.updateProjectionMatrix();
 		controls.update();
 		controls.saveState();
@@ -293,7 +327,7 @@ function buildGUI() {
 	gui.add(controls, "reset").name("Reset position");
 
 	gui.add(noiseProperties, "Terrain3D")
-		.name("Generate Terrain")
+		.name("Terrain")
 		.onChange(function (value) {
 			noiseProperties.Terrain3D = value;
 			if (value && object.name === "Plane") {
@@ -304,6 +338,7 @@ function buildGUI() {
 			} else if (!value && object.name === "Terrain") {
 				scene.remove(object);
 				meshData = undefined;
+				
 				createInstancePlane();
 				updateControls();
 				render();
@@ -320,6 +355,7 @@ function buildGUI() {
 		.onChange(function () {
 			updateObject();
 		});
+	meshFolder.open();
 
 	const noiseFolder = gui.addFolder("Noise properties");
 
@@ -338,16 +374,16 @@ function buildGUI() {
 
 	noiseFolder
 		.add(noiseProperties, "types", noiseProperties.types)
-		.setValue("random")
+		.setValue(noiseProperties.currentType)
 		.onChange(function (value) {
-			if (value === "perlin2D") {
+			if (value === "perlin") {
 				improvedPerlinPropFolder.hide();
 				perlinPropertiesFolder.show();
 				perlinPropertiesFolder.open();
 			} else {
 				perlinPropertiesFolder.hide();
 			}
-			if (value === "improved perlin2D") {
+			if (value === "improved perlin") {
 				perlinPropertiesFolder.hide();
 				improvedPerlinPropFolder.show();
 				improvedPerlinPropFolder.open();
@@ -361,6 +397,7 @@ function buildGUI() {
 
 	noiseFolder
 		.add(noiseProperties, "textures", noiseProperties.textures)
+		.setValue(noiseProperties.texture)
 		.name("Texture map")
 		.onChange(function (value) {
 			noiseProperties.texture = value;
@@ -464,5 +501,5 @@ function buildGUI() {
 		});
 
 	perlinPropertiesFolder.hide();
-	improvedPerlinPropFolder.hide();
+	improvedPerlinPropFolder.open();
 }

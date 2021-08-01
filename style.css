@@ -92,8 +92,7 @@ img{
 #improvedPerlinGUI,
 #projectGUI
 {
-    width: 100%;
-    height: auto;
+    
     position: absolute;
     float: right; 
 }

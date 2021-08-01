@@ -19,6 +19,8 @@ import { Region } from "./HeightMap/region.js";
 import { generateMeshData } from "./HeightMap/mesh.js";
 
 
+
+
 // Camera Settings
 let fov = 45;
 let aspect = width / height;
@@ -46,6 +48,7 @@ let pause = true;
 let seed = MathUtils.randInt(0, Number.MAX_VALUE);
 
 const terrain = document.getElementById("terrain");
+
 
 init();
 

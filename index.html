@@ -118,11 +118,10 @@
 				<p>
 					It is pretty random and does not look like anything close to a terrain even with the colors...
 				</p>
-				
-
-
 
 				 <h1 class="subtitle">Perlin Noise</h1>
+				 <p>First I need to say that through this lecture I'm not trying to explain the algorithms in detail here, 
+					 you can find people that already did that in a way better way than I would, you can check my <a href="#source">sources</a>.</p>
 				 <p>
 					The algorithm of Ken Perlin takes as input two numbers representing $(x, y)$ coordinate 
 					and returns a pseudo-random value between 0 and 1. <span class="detail">(actually it is a value between $[-\sqrt(N/4), \sqrt(N/4)]$ where N is the number of dimensions. But in my case, the value is brought back in the range [0, 1]. 
@@ -176,9 +175,7 @@
 						 The use of a permutation table.
 					 </li>
 				 </p>
-				 <p>
-					I do not go into too many details here, you can find people that already explained it really well including Ken Perlin himself in his article.
-				 </p>
+				 
 
 				 <p>
 					In the implementation of Ken Perlin, the algorithm is computed in 3 dimensions, however since I'm generating a texture I only need 2 dimensions.<br>
@@ -224,7 +221,7 @@
 					<figcaption>Right click to move the mesh, Left click to rotate the mesh, scroll to zoom. </figcaption>
 				</figure>
 
-				<h3 id="source">Sources and Ressources</h3>
+				<h3 id="source">Sources and References</h3>
 				I used Three.js to implement pretty much eveything.
 				<ul>
 					<li><a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Heightmap">Heightmaps</a></li>

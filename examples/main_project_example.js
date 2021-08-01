@@ -1,4 +1,4 @@
-import { GUI } from "./vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
+import { GUI } from "../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {
 	BufferAttribute,
 	BufferGeometry,
@@ -14,15 +14,15 @@ import {
 	Scene,
 	Vector2,
 	WebGLRenderer,
-} from "./vendors/three.js-r130/build/three.module.js";
+} from "../vendors/three.js-r130/build/three.module.js";
 import {
 	generateImprovedPerlinMaps,
 	generatePerlinMaps,
 	generateRandomMaps,
-} from "./HeightMap/NoiseGenerator/noise.js";
-import { OrbitControls } from "./vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
-import { Region } from "./HeightMap/region.js";
-import { generateMeshData } from "./HeightMap/mesh.js";
+} from "../HeightMap/NoiseGenerator/noise.js";
+import { OrbitControls } from "../vendors/three.js-r130/examples/jsm/controls/OrbitControls.js";
+import { Region } from "../HeightMap/region.js";
+import { generateMeshData } from "../HeightMap/mesh.js";
 
 //create gui
 const gui = new GUI({ autoPlace: false, width:200});

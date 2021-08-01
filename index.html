@@ -5,6 +5,7 @@
 		<meta charset="UTF-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" href="/resources/logo/favicon.ico">
 		<link rel="stylesheet" href="style.css" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +13,7 @@
 			href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap"
 			rel="stylesheet"
 		/>
-		
+
 		<link
 			href="https://fonts.googleapis.com/css2?family=Roboto+Condensed&display=swap"
 			rel="stylesheet"
@@ -20,19 +21,35 @@
 
 		<script>
 			MathJax = {
-  				tex: {
-    			inlineMath: [['$', '$'], ['\\(', '\\)']]
-  				}
+				tex: {
+					inlineMath: [
+						["$", "$"],
+						["\\(", "\\)"],
+					],
+				},
 			};
 		</script>
-		<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+		<script
+			id="MathJax-script"
+			async
+			src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+		></script>
 
 		<title>Document</title>
 	</head>
 	<body>
 		<div id="main">
-			<script src="canvas_dimensions.js" type="text/javascript"></script>
+			<script type="text/javascript">
+				const main_element = document.getElementById("main");
+				const aspect_ratio = 700 / 500;
+				let width = main_element.getBoundingClientRect().width - 70; // It's bad I know...
+				let height = width / aspect_ratio;
+
+				window.addEventListener("resize", function () {
+					width = main.getBoundingClientRect().width - 70;
+					height = width / aspect_ratio;
+				});
+			</script>
 			<div class="author">
 				<span class="author_name">Gilles Souton</span>
 				<div class="author_links">
@@ -66,172 +83,350 @@
 						Click to pause or restart the animation
 					</figcaption>
 				</figure>
-				<script src="terrain.js" type="module"></script>
+				<script
+					src="examples/terrain_example.js"
+					type="module"
+				></script>
 				<p>
-					I was always intrigued by procedural generation and was interested in how some of those techniques were developed.
-					</br> 
-					The cases where I encountered procedural generation were mostly in video games for terrains and map generation.
-			 	</p>
+					I was always intrigued by procedural generation and was
+					interested in how some of those techniques were developed.
+					<br />
+					The cases where I encountered procedural generation were
+					mostly in video games for terrains and map generation. I
+					decided then to dive into procedurally generated terrain.
+				</p>
 
-				 <p>
-					I knew that heightmaps were used to generate and visualize terrains, however, I didn't know how those heightmaps were created.
-					So I went to read about <a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Heightmap">heightmaps</a> on Wikipedia and found methods such as <a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise </a>  
-					and the <a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Diamond-square_algorithm"> Diamond-square algorithm</a>.
-				 </p>
-				 <figure class="figure">
-					<img src="resources/PerlinNoise/PerlinNoise2d.png">
+				<p>
+					I knew that heightmaps were used to generate and visualize
+					terrains, however, I didn't know how those heightmaps were
+					created. So I went to read about
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://en.wikipedia.org/wiki/Heightmap"
+						>heightmaps</a
+					>
+					on Wikipedia and found methods such as
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://en.wikipedia.org/wiki/Perlin_noise"
+						>Perlin Noise
+					</a>
+					and the
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://en.wikipedia.org/wiki/Diamond-square_algorithm"
+					>
+						Diamond-square algorithm</a
+					>.
+				</p>
+				<figure class="figure">
+					<img src="resources/PerlinNoise/PerlinNoise2d.png" />
 					<figcaption>
 						From
-						 <a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise </a> 
-						 Wikipedia
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://en.wikipedia.org/wiki/Perlin_noise"
+							>Perlin Noise
+						</a>
+						Wikipedia
 					</figcaption>
-				 </figure>
-				 <p>
-					The algorithm felt like magic at first, so I decided to do more research and try to have a better understanding.
-					I found  multiple articles and ressources on the subject, such as the original paper of
-					<a target="_blank" rel="noopener noreferrer" href="https://mrl.cs.nyu.edu/~perlin/paper445.pdf">Ken Perlin</a> on the improved version of his algorithm.
-				 </p>
-				 <h1 class="subtitle">Heightmaps</h1>
-				 <p>
-					If you already know what is a heightmap you can skip this part &#x1F609 .
-				 </p>
-				 <p>
-					 To summarize quite fast a heightmap is a lightweight and easy way to store information about terrain elevations.
-					 It can be a colored or gray scale image depending on the level of details, where each color is mapped to a certain height.
-					 That's all that's needed.  
-				 </p>
+				</figure>
+				<p>
+					The Perlin Noise algorithm felt like magic at first, so I
+					decided to do more research and try to have a better
+					understanding of it. I found multiple articles and
+					ressources on the subject, such as the original paper of
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://mrl.cs.nyu.edu/~perlin/paper445.pdf"
+						>Ken Perlin</a
+					>
+					on the improved version of his algorithm.
+				</p>
+				<h1 class="subtitle">Heightmaps</h1>
+				<p>
+					If you already know what is a heightmap you can skip this
+					part &#128521; .
+				</p>
+				<p>
+					To summarize quite fast a heightmap is a lightweight and
+					easy way to store information about terrain elevations.
+					Images are used to store this information, the location of
+					the pixel indicate the x and z coordinate (in 3 dimensions)
+					and the color indicate the y coordinate (height).
+				</p>
+				<p>
+					Those images can be a colored with multiple channels or in
+					gray levels, this choice will depends on the level of
+					details needed.
+				</p>
 
-				 <h1 class="subtitle">Noise</h1>
-				 <p>Even though I knew that there were algorithms 
-					 and techniques specially used for this purposed I still wanted to see how random noise looked like.</p>
-				<p> 
-					So I went to my keyboard and generated a random picture in grayscale made out of completely random values.
-					Then mapped this picture as a texture on a plane to visualize it, and added some colors too.
-					Here's the result.
+				<h1 class="subtitle">Noise</h1>
+				<p>
+					Even though I knew that there were algorithms and techniques
+					specially developped for procedural generation. I still
+					wanted to see how random noise looked like.
+				</p>
+				<p>
+					So I went to my keyboard and generated a random texture in
+					grayscale made out of completely random values. Then mapped
+					this texutre to a plane to visualize it, and added some
+					colors too. Here's the result:
 				</p>
 				<figure id="noiseFigure" class="figure">
 					<div id="noiseGUI"></div>
 					<canvas id="noise"></canvas>
 					<figcaption>You can click to drag the plane</figcaption>
-					<script src="./noise.js" type="module"></script>
+					<script
+						src="./examples/random_noise_example.js"
+						type="module"
+					></script>
 				</figure>
 				<p>
-					It is pretty random and does not look like anything close to a terrain even with the colors...
+					It is pretty random and does not look like anything close to
+					a terrain even with the colors...
 				</p>
 
-				 <h1 class="subtitle">Perlin Noise</h1>
-				 <p>First I need to say that through this lecture I'm not trying to explain the algorithms in detail here, 
-					 you can find people that already did that in a way better way than I would, you can check my <a href="#source">sources</a>.</p>
-				 <p>
-					The algorithm of Ken Perlin takes as input two numbers representing $(x, y)$ coordinate 
-					and returns a pseudo-random value between 0 and 1. <span class="detail">(actually it is a value between $[-\sqrt(N/4), \sqrt(N/4)]$ where N is the number of dimensions. But in my case, the value is brought back in the range [0, 1]. 
-					The math can be found <a target="_blank" rel="noopener noreferrer" href="https://digitalfreepen.com/2017/06/20/range-perlin-noise.html">here</a>)</span>
-				 </p>
-				 <p>
-					 To understand the algorithm we can visualize each step :
-					 <li class="list">
-						Create a grid of random unit vectors
-					 </li>
-					 <li class="list">
-						The point passed in parameters will be located in one of the cells of the grid.
-						Find those corners and compute the dot product between the vector of each corner with the offset vector (offset vector = topLeftVector - inputVector)
-					 </li>
-					 <li class="list">
-						 Finally, do an interpolation between the dot products.
-					 </li>
-				 </p>
-				 <p>
-					After having a general understanding of the algorithm,
-					I decided to implement this algorithm and started to implement the non-improved version of the algorithm.
-				 </p>
-				 <figure id="perlinFigure" class="figure">
-					 <div id="perlinGUI"></div>
+				<h1 class="subtitle">Perlin Noise</h1>
+				<p>
+					First I need to say that I'm not trying to explain the
+					algorithms in detail here, you can find people that already
+					did that in a way better way than I would, you can check my
+					<a href="#source">sources</a>.
+				</p>
+				<p>
+					The algorithm of Ken Perlin takes as input two numbers
+					representing $(x, y)$ coordinate and returns a pseudo-random
+					value between 0 and 1.
+					<span class="detail"
+						>(actually it is a value between $[-\sqrt(N/4),
+						\sqrt(N/4)]$ where N is the number of dimensions. But in
+						my case, the value is brought back in the range [0, 1].
+						The math can be found
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://digitalfreepen.com/2017/06/20/range-perlin-noise.html"
+							>here</a
+						>)</span
+					>
+				</p>
+				<p>
+					Summary of the algorithm:
+					<li class="list">Create a grid of random unit vectors</li>
+					<li class="list">
+						The point passed in parameters will be located in one of
+						the cells of the grid. Find those corners and compute
+						the dot product between the vector of each corner with
+						the offset vector (offset vector = topLeftVector -
+						inputVector)
+					</li>
+					<li class="list">
+						Finally, do an interpolation between the dot products.
+					</li>
+				</p>
+				<p>
+					After having a general understanding of the algorithm, I
+					decided to implement this algorithm and started to implement
+					the non-improved version of the algorithm.
+				</p>
+				<figure id="perlinFigure" class="figure">
+					<div id="perlinGUI"></div>
 					<canvas id="perlin"></canvas>
-					<figcaption>You can click to drag the plane</figcaption>	
-				 	<script src="./perlin.js" type="module"></script>
-				 </figure>
+					<figcaption>You can click to drag the plane</figcaption>
+					<script
+						src="./examples/perlin_example.js"
+						type="module"
+					></script>
+				</figure>
 
-				 <p>
-					At first, the result looks a bit odd (octaves = 1). </br>
-					That's where I discovered that you can add noise together (octaves).</br>
-					When the octaves increase, I'm adding the noise to itself to create more complex and natural-like patterns.</br><br>
-					This version is working quite fine, but it is known to be slower than the improved version so
-					let's implement the improved version of this algorithm.
-					The original code implementation written by Ken Perlin can be found
-					<a target="_blank" rel="noopener noreferrer" href="https://mrl.cs.nyu.edu/~perlin/noise/">here</a>.
-				 </p>
+				<p>
+					At first, the result looks a bit odd (octaves = 1). <br />
+					That's where I discovered that you can add noise together
+					(use of octaves).<br />
+					You can check
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://www.youtube.com/watch?v=wbpMiKiSKm8"
+						>Sebastian lague video</a
+					>
+					to understand the idea. To make it short when the number of
+					octaves increases, I'm adding the noise to itself to create
+					more complex and natural-like patterns.<br /><br />
+					This version is working quite fine, but it is known to be
+					slower than the improved version and you can see it if you
+					increase the resolution.
+				</p>
+				<p>
+					So let's implement the improved version of this algorithm.
+					The original code implementation written by Ken Perlin can
+					be found
+					<a
+						target="_blank"
+						rel="noopener noreferrer"
+						href="https://mrl.cs.nyu.edu/~perlin/noise/"
+						>here</a
+					>.
+				</p>
 
-				 <h1>Improved Perlin Noise</h1>
-				 <p>
-					 The main differences between the improved version and the last version:
-					 <li class="list">
-						The interpolant has been changed.
-					 </li>
-					 <li class="list">
-						 The vectors are not chosen randomly anymore.
-						 Now each vector is chosen between one that leads to an edge of the grid. 
-					 </li>
-					 <li class="list">
-						 The use of a permutation table.
-					 </li>
-				 </p>
-				 
+				<h1>Improved Perlin Noise</h1>
+				<p>
+					The main differences between the improved version and the
+					last version:
+					<li class="list">The interpolant has been changed.</li>
+					<li class="list">
+						The vectors are not chosen randomly anymore. Now each
+						vector is chosen between one that leads to an edge of
+						the grid.
+					</li>
+					<li class="list">
+						The use of a permutation table to choose betweem those
+						vectors.
+					</li>
+				</p>
 
-				 <p>
-					In the implementation of Ken Perlin, the algorithm is computed in 3 dimensions, however since I'm generating a texture I only need 2 dimensions.<br>
-					So needed to rewrite this code to work with only two dimensions and here we are!
-
-				 </p>
-				 <figure id="improvedPerlinFigure" class="figure">
+				<p>
+					In the implementation of Ken Perlin, the algorithm is
+					computed in 3 dimensions, however since I'm generating a
+					texture I only need 2 dimensions.<br />
+					I needed to rewrite this code to work with only two
+					dimensions.
+				</p>
+				<figure id="improvedPerlinFigure" class="figure">
 					<div id="improvedPerlinGUI"></div>
 					<canvas id="improvedPerlin"></canvas>
-					<script src="improvedPerlin.js" type="module"></script>
-				 </figure>
-				 <p>
-					As mentioned by Ken Perlin in his article, this version is faster and has a better distribution of gradients.
-					Now that this algorithm is implemented it is possible to generate those pseudo-random textures with a natural look.
-				 </p>
-				 
+					<script
+						src="examples/improvedPerlin_example.js"
+						type="module"
+					></script>
+				</figure>
+				<p>
+					As mentioned by Ken Perlin in his article, this version is
+					faster and has a better distribution of gradients. Now that
+					this algorithm is implemented it is possible to generate
+					those pseudo-random textures with a natural look.
+				</p>
 
-				 <h1>Mesh</h1>
-				 <p>Now that we can generate random heightmaps that look more natural and not like a random mess, we can start to generate meshes.</p>
-				 <p>In this case the brighter the color the higher it is (so a white pixel is a high point in the map and a black pixel is the lowest point)</p>
-				 <p>So the main idea is to generate a plane with numerous amount of vertices and to elevate each vertice depending on the color that has been read.</p>
-				
+				<h1>Mesh</h1>
+				<p>
+					Now that we can generate random heightmaps that look more
+					natural and not like a random mess, we can start to generate
+					meshes.
+				</p>
+				<p>
+					In my case the brighter the color the higher it is (so a
+					white pixel is a high point in the map and a black pixel is
+					the lowest point)
+				</p>
+				<p>
+					So the main idea is to generate a plane with numerous amount
+					of vertices and to elevate each vertice depending on the
+					color that has been read.
+				</p>
+
 				<figure id="meshFigure" class="figure">
-					
-					 <canvas id="mesh"></canvas>
-					 <script src="mesh.js" type="module"></script>
+					<canvas id="mesh"></canvas>
+					<script
+						src="examples/mesh_example.js"
+						type="module"
+					></script>
 					<figcaption class="terrain_caption">
 						Click to pause or restart the animation
 					</figcaption>
 				</figure>
 				<h1>Conclusion</h1>
 				<p>
-					That's all for now.
-					
-				
-					I always wanted to explore and discover techniques used in computer graphics.
-					I think I will do more computer graphics related experiments soon, but this was a nice and gentle way to start.
+					That's all for now. I always wanted to explore and discover
+					techniques used in computer graphics. I think I will do more
+					computer graphics related experiments soon, but this was a
+					nice and gentle way to start.
 				</p>
 				<figure id="projectFigure">
 					<div id="projectGUI"></div>
 					<canvas id="project"></canvas>
-					<script src="project.js" type="module"></script>
-					<figcaption>Right click to move the mesh, Left click to rotate the mesh, scroll to zoom. </figcaption>
+					<script
+						src="examples/main_project_example.js"
+						type="module"
+					></script>
+					<figcaption>
+						Right click to move the mesh, Left click to rotate the
+						mesh, scroll to zoom.
+					</figcaption>
 				</figure>
 
 				<h3 id="source">Sources and References</h3>
 				I used Three.js to implement pretty much eveything.
 				<ul>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Heightmap">Heightmaps</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://mrl.cs.nyu.edu/~perlin/paper445.pdf">Ken Perlin Paper</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://mrl.cs.nyu.edu/~perlin/noise/">Ken Perlin implentation</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://en.wikipedia.org/wiki/Perlin_noise">Perlin Noise</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://adrianb.io/2014/08/09/perlinnoise.html">Understanding Perlin Noise</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://rtouti.github.io/graphics/perlin-noise-algorithm">Perlin Noise: A Procedural Generation Algorithm</a></li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/c/SebastianLague">Sebastian Lague, Procedural Terrain Generation</a>, you should definetly check it if you don't know him.</li>
-					<li><a target="_blank" rel="noopener noreferrer" href="https://digitalfreepen.com/2017/06/20/range-perlin-noise.html">The range of perlin Noise</a></li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://en.wikipedia.org/wiki/Heightmap"
+							>Heightmaps</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://mrl.cs.nyu.edu/~perlin/paper445.pdf"
+							>Ken Perlin Paper</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://mrl.cs.nyu.edu/~perlin/noise/"
+							>Ken Perlin implentation</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://en.wikipedia.org/wiki/Perlin_noise"
+							>Perlin Noise</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://adrianb.io/2014/08/09/perlinnoise.html"
+							>Understanding Perlin Noise</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://rtouti.github.io/graphics/perlin-noise-algorithm"
+							>Perlin Noise: A Procedural Generation Algorithm</a
+						>
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://www.youtube.com/c/SebastianLague"
+							>Sebastian Lague, Procedural Terrain Generation</a
+						>, you should definetly check it if you don't know him.
+					</li>
+					<li>
+						<a
+							target="_blank"
+							rel="noopener noreferrer"
+							href="https://digitalfreepen.com/2017/06/20/range-perlin-noise.html"
+							>The range of perlin Noise</a
+						>
+					</li>
 				</ul>
 			</article>
 		</div>

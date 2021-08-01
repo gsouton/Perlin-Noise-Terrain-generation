@@ -1,4 +1,4 @@
-import { GUI } from "./vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
+import { GUI } from "../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
 import {
 	Color,
 	DataTexture,
@@ -10,20 +10,19 @@ import {
 	RGBFormat,
 	Scene,
 	WebGLRenderer,
-} from "./vendors/three.js-r130/build/three.module.js";
+} from "../vendors/three.js-r130/build/three.module.js";
 
-import { generateRandomMaps } from "./HeightMap/NoiseGenerator/noise.js";
-import { Region } from "./HeightMap/region.js";
-import { DragControls } from "./vendors/three.js-r130/examples/jsm/controls/DragControls.js";
+import { generatePerlinMaps } from "../HeightMap/NoiseGenerator/noise.js";
+import { Region } from "../HeightMap/region.js";
+import { DragControls } from "../vendors/three.js-r130/examples/jsm/controls/DragControls.js";
 
 //create gui
-const gui = new GUI({ autoPlace: false, width: 200});
-const customGUIEl = document.getElementById("noiseGUI");
+const gui = new GUI({ autoPlace: false, width: 200 });
+const customGUIEl = document.getElementById("perlinGUI");
 customGUIEl.appendChild(gui.domElement);
 
-
 //Renderer settings
-const canvas = document.getElementById("noise");
+const canvas = document.getElementById("perlin");
 
 
 // Camera Settings
@@ -35,6 +34,14 @@ let far = 1000;
 let camera, scene, renderer;
 let object = [];
 
+let perlinProperties = {
+	interpolationTypes: ["linear", "smoothstep", "smootherstep"],
+	interpolation: "linear",
+	scale: 0.06,
+	scaleMax: 1,
+	octaves: 4,
+	persistance: 0.5,
+};
 
 let noiseProperties = {
 	currentType: "perlin2D",
@@ -87,7 +94,15 @@ function init() {
 }
 
 function initMaps() {
-	const maps = generateRandomMaps(noiseProperties.resolution, noiseProperties.resolution, regions);
+	const maps = generatePerlinMaps(
+		noiseProperties.resolution,
+		noiseProperties.resolution,
+		perlinProperties.scale,
+		perlinProperties.interpolation,
+		perlinProperties.octaves,
+		perlinProperties.persistance,
+		regions
+	);
 	updateTextureAndHeightmap(maps);
 }
 
@@ -99,6 +114,7 @@ function createInstancePlane() {
 	});
 	object.push(new Mesh(planeGeo, planeMaterial));
 	object[0].name = "Plane";
+	object[0].position.set(0.5850609519085801, -0.07682641649536968, 0);
 
 	scene.add(object[0]);
 }
@@ -108,12 +124,12 @@ function render() {
 }
 
 function onWindowResize() {
+	
 	if(width < 600){
 		gui.close();
 	}else if(width > 600){
 		gui.open();
 	}
-	
 	renderer.setSize(width, height);
 	render();
 }
@@ -136,7 +152,16 @@ function updateTextureAndHeightmap(maps) {
 }
 
 function updateTexture() {
-	const maps = generateRandomMaps(noiseProperties.resolution, noiseProperties.resolution, regions);
+	perlinProperties.scaleMax = 1;
+	const maps = generatePerlinMaps(
+		noiseProperties.resolution,
+		noiseProperties.resolution,
+		perlinProperties.scale,
+		perlinProperties.interpolation,
+		perlinProperties.octaves,
+		perlinProperties.persistance,
+		regions
+	);
 	updateTextureAndHeightmap(maps);
 	object[0].material.map = textures[noiseProperties.texture];
 
@@ -163,5 +188,32 @@ function buildGUI() {
 			render();
 		});
 
-	
+	const perlinPropertiesFolder = noiseFolder.addFolder(
+		"Perlin Noise properties"
+	);
+	perlinPropertiesFolder
+		.add(perlinProperties, "scale", 0, perlinProperties.scaleMax, 0.000001)
+		.onChange(function (value) {
+			perlinProperties.scale = value;
+			updateTexture();
+		});
+	perlinPropertiesFolder
+		.add(perlinProperties, "octaves", 1, 8, 1)
+		.onChange(function (value) {
+			perlinProperties.octaves = value;
+			updateTexture();
+		});
+
+	perlinPropertiesFolder
+		.add(
+			perlinProperties,
+			"interpolation",
+			perlinProperties.interpolationTypes
+		)
+		.onChange(function (value) {
+			perlinProperties.interpolation = value;
+			updateTexture();
+		});
+
+	perlinPropertiesFolder.open();
 }

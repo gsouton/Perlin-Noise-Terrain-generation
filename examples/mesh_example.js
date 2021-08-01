@@ -4,6 +4,7 @@ import {
 	Color,
 	DataTexture,
 	DoubleSide,
+	DynamicDrawUsage,
 	LuminanceFormat,
 	MathUtils,
 	Mesh,
@@ -13,12 +14,10 @@ import {
 	Scene,
 	Vector2,
 	WebGLRenderer,
-} from "./vendors/three.js-r130/build/three.module.js";
-import { generateImprovedPerlinMaps } from "./HeightMap/NoiseGenerator/noise.js";
-import { Region } from "./HeightMap/region.js";
-import { generateMeshData } from "./HeightMap/mesh.js";
-
-
+} from "../vendors/three.js-r130/build/three.module.js";
+import { generateImprovedPerlinMaps } from "../HeightMap/NoiseGenerator/noise.js";
+import { Region } from "../HeightMap/region.js";
+import { generateMeshData } from "../HeightMap/mesh.js";
 
 
 // Camera Settings
@@ -47,28 +46,39 @@ const resolution = 64;
 let pause = true;
 let seed = MathUtils.randInt(0, Number.MAX_VALUE);
 
-const terrain = document.getElementById("terrain");
+const canvas = document.getElementById("mesh");
+
+let positionAttribute;
+let vertices_buffer;
+let index = 0;
+let end = resolution*resolution-1;
+let start = undefined;
 
 
 init();
 
+
+
+
+
 function init() {
 	//------- Initialize renderer -------------------
-	renderer = new WebGLRenderer({ canvas: terrain, antialias: true });
+	renderer = new WebGLRenderer({ canvas: canvas, antialias: true });
 	renderer.setSize(width, height);
+	//renderer.setAnimationLoop(render);
 	renderer.setPixelRatio(window.devicePixelRatio);
 
 	//------- create a camera ---------
 	camera = new PerspectiveCamera(fov, aspect, near, far);
-	camera.position.set(0 * resolution, 0.9 * resolution, 1.6 * resolution);
-	camera.rotateX(-Math.PI / 8);
-	//camera.rotateY(Math.PI/6);
-	//camera.rotateZ(Math.PI/7);
+	camera.position.set(0 * resolution, .85 * resolution, .98 * resolution);
+	camera.rotateX(-Math.PI / 4);
+	//camera.rotateX(-Math.PI/2);
 
 	camera.updateProjectionMatrix();
 
 	// ------ create a scene ----------
 	scene = new Scene();
+	scene.background = new Color(0xffaaaa);
 	//------------ Manage the resize window ------------
 	window.addEventListener("resize", onWindowResize);
 	renderer.domElement.addEventListener("click", rendererSwitchAnimationLoop);
@@ -79,6 +89,7 @@ function init() {
 	//------ make a plane ----
 	createTerrain();
 
+	
 
 	const observer = new IntersectionObserver(
 		function (entries) {
@@ -88,12 +99,10 @@ function init() {
 		},
 		{ threshold: [0] }
 	);
-	observer.observe(terrain);
+	observer.observe(canvas);
 
 	render();
 }
-
-
 function pauseRendering(){
 	if(!pause){
 		renderer.setAnimationLoop();
@@ -108,7 +117,27 @@ function restartRendering(){
 	}
 }
 
+function flattenTerrain(){
+	for(let i = 0; i < heightmap.height*heightmap.width; i++){
+		let stride = i *3;
+		vertices_buffer[stride+1] = 0;
+	}
+}
+
+function elevateMesh(index, end){
+	vertices_buffer[index*3+1] = evaluateHeight(heightmap.map[index]/255, 1.5);
+	vertices_buffer[end*3 + 1] = evaluateHeight(heightmap.map[end]/255, 1.5);
+	positionAttribute.needsUpdate = true;
+}
+
 function rendererSwitchAnimationLoop() {
+	if(isAnimationOver()){
+		index = 0;
+		end = resolution*resolution-1;	
+		flattenTerrain();
+		restartRendering();
+		return;
+	}
 	pause = !pause;
 	if (pause) renderer.setAnimationLoop();
 	else renderer.setAnimationLoop(render);
@@ -131,30 +160,47 @@ function initMaps(width, height) {
 
 function createTerrain() {
 	const meshData = generateMeshData(heightmap, 1.5);
+	vertices_buffer = meshData.vertices;
+	flattenTerrain();
 	const bufferGeometry = new BufferGeometry();
-	bufferGeometry.setAttribute(
-		"position",
-		new BufferAttribute(meshData.vertices, 3)
-	);
-	//bufferGeometry.setAttribute("uv", new BufferAttribute(meshData.uvs, 2));
+
+	positionAttribute = new BufferAttribute(meshData.vertices, 3); 
+	positionAttribute.setUsage(DynamicDrawUsage);
+
+	bufferGeometry.setAttribute("position", positionAttribute);
+	bufferGeometry.setAttribute("uv", new BufferAttribute(meshData.uvs, 2));
 	bufferGeometry.setIndex(new BufferAttribute(meshData.triangles, 1));
 
 	const Mat = new MeshBasicMaterial({
 		side: DoubleSide,
 		wireframe: true,
-		color: 0xffddff,
-		//map: textures.noiseTexture,
+		map: textures.noiseTexture,
 	});
 	object = new Mesh(bufferGeometry, Mat);
 	object.name = "Terrain";
-	object.position.y += 10;
+	object.rotateY(Math.PI/2);
 	scene.add(object);
 }
 
 function render(time) {
+	time *= 0.001;
+	if(start === undefined && !isNaN(time))
+		start = time;
+	if(time - start >= 0.01 && !isAnimationOver()){
+		elevateMesh(index, end);
+		index++;
+		end--;
+		start = time;
+	}
 	
-	object.rotation.y += 0.005;
 	renderer.render(scene, camera);
+	if(isAnimationOver()){
+		pauseRendering();
+	}
+}
+
+function isAnimationOver(){
+	return index >= heightmap.width *heightmap.height/2
 }
 
 function onWindowResize() {
@@ -180,3 +226,13 @@ function updateTextureAndHeightmap(maps) {
 		RGBFormat
 	);
 }
+
+function evaluateHeight(heightValue, heightMultiplier = 1.5) {
+	if(heightValue <= 0.4){
+        return heightValue* 0.4*10 ;
+    }
+    return heightValue * heightValue*10 * heightMultiplier;
+}
+
+
+

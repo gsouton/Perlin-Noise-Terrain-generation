@@ -10,12 +10,12 @@ import {
 	Scene,
 	Vector2,
 	WebGLRenderer,
-} from "./vendors/three.js-r130/build/three.module.js";
-import { GUI } from "./vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
-import { DragControls } from "./vendors/three.js-r130/examples/jsm/controls/DragControls.js";
+} from "../vendors/three.js-r130/build/three.module.js";
+import { GUI } from "../vendors/three.js-r130/examples/jsm/libs/dat.gui.module.js";
+import { DragControls } from "../vendors/three.js-r130/examples/jsm/controls/DragControls.js";
 
-import { generateImprovedPerlinMaps } from "./HeightMap/NoiseGenerator/noise.js";
-import { Region } from "./HeightMap/region.js";
+import { generateImprovedPerlinMaps } from "../HeightMap/NoiseGenerator/noise.js";
+import { Region } from "../HeightMap/region.js";
 
 //create gui
 const gui = new GUI({ autoPlace: false, width: 200 });
